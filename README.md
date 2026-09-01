@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Pearls AQI Predictor
 
 An end-to-end, serverless machine learning system that predicts the Air
@@ -174,3 +175,6 @@ configurable in `config.py`).
   industrial activity data could improve accuracy further.
 - The neural network uses a small architecture for speed; with more
   historical data, a larger network or an LSTM could be explored.
+=======
+# pearls-aqi-predictor
+>>>>>>> 05c2ebbef142def0c7f8337c8967a6df79b3ed24
