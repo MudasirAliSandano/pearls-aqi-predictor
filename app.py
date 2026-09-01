@@ -192,4 +192,5 @@ st.line_chart(recent_history)
 st.caption(
     "Built for the Pearls AQI Predictor project | Data source: Open-Meteo | "
     f"Feature store: {'Hopsworks' if config.USE_HOPSWORKS else 'Local (fallback)'}"
+
 )
