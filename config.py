@@ -23,9 +23,8 @@ LONGITUDE = 68.8574
 # 2. DATA SOURCE SETTINGS
 # =========================================================
 # POLLUTANT DATA -> OpenWeather Air Pollution API.
-# You can paste your OpenWeather API key directly below inside the quotes,
-# or set it as an environment variable.
-OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "Aap_Apni_API_Key_Yahan_Paste_Kar_Sakte_Hain")
+# Set the OPENWEATHER_API_KEY environment variable with your API key.
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
 OPENWEATHER_POLLUTION_CURRENT_URL = "http://api.openweathermap.org/data/2.5/air_pollution"
 OPENWEATHER_POLLUTION_FORECAST_URL = "http://api.openweathermap.org/data/2.5/air_pollution/forecast"
 OPENWEATHER_POLLUTION_HISTORY_URL = "http://api.openweathermap.org/data/2.5/air_pollution/history"

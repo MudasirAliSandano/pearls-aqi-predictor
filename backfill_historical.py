@@ -1,59 +1,48 @@
-"""
-backfill_historical.py
------------------------
-STEP 2 of the project: Historical Data Backfill.
+import os
+import pandas as pd
+import requests
+from datetime import datetime, timedelta
 
-A model cannot be trained on just a couple of hours of data - it needs
-weeks of history to learn real patterns. This script fetches the
-maximum available historical window from Open-Meteo in one go and
-stores it, giving the training pipeline enough data to work with.
+def backfill_data():
+    print("Backfilling historical air quality data using Open-Meteo...")
+    
+    # Coordinates for Sukkur
+    lat, lon = 27.7052, 68.8574
+    
+    # Fetching past 30 days of hourly data from Open-Meteo
+    url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&hourly=pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide&past_days=30"
+    
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"Failed to fetch data: {response.text}")
+        return
 
-Run manually with:
-    python backfill_historical.py
-
-You normally only need to run this ONCE at the start of the project.
-After that, feature_pipeline.py (running hourly) keeps adding new data.
-"""
-
-import sys
-import config
-import utils
-from feature_pipeline import get_feature_store, save_to_feature_store
-
-
-def run_backfill(past_days=None):
-    past_days = past_days or config.BACKFILL_PAST_DAYS
-    print(f"Backfilling the last {past_days} days of historical data "
-          f"for {config.CITY_NAME}...")
-
-    aq_json = utils.fetch_air_quality(
-        config.LATITUDE, config.LONGITUDE, past_days=past_days
-    )
-    weather_json = utils.fetch_weather(
-        config.LATITUDE, config.LONGITUDE, past_days=past_days
-    )
-
-    features_df = utils.build_feature_dataframe(aq_json, weather_json)
-    # The first couple of rows will always be missing lag features -> drop them
-    features_df = features_df.dropna(subset=["aqi_lag_1", "aqi_lag_2"]).reset_index(drop=True)
-
-    print(f"Built {len(features_df)} rows of historical training data.")
-
-    feature_store = get_feature_store()
-
-    if feature_store is not None:
-        save_to_feature_store(features_df, feature_store)
-    else:
-        saved_df = utils.save_features_locally(features_df)
-        print(f"[Local fallback mode] Saved backfilled data to "
-              f"'{config.LOCAL_FEATURES_FILE}'. Total rows now: {len(saved_df)}")
-
-    print("Backfill finished successfully. You can now run training_pipeline.py")
-
+    data = response.json()
+    hourly = data.get("hourly", {})
+    
+    df = pd.DataFrame({
+        'timestamp': hourly.get('time'),
+        'pm2_5': hourly.get('pm2_5'),
+        'pm10': hourly.get('pm10'),
+        'co': hourly.get('carbon_monoxide'),
+        'no2': hourly.get('nitrogen_dioxide'),
+        'so2': hourly.get('sulphur_dioxide')
+    })
+    
+    # Handle missing values and create dummy AQI calculation for target
+    df = df.dropna()
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df['aqi'] = (df['pm2_5'] * 1.5).fillna(50) # Derived proxy for AQI target
+    
+    # Feature engineering steps
+    df['hour'] = df['timestamp'].dt.hour
+    df['day'] = df['timestamp'].dt.day
+    df['month'] = df['timestamp'].dt.month
+    df['aqi_lag1'] = df['aqi'].shift(1).fillna(df['aqi'].mean())
+    
+    os.makedirs('data', exist_ok=True)
+    df.to_csv('data/features.csv', index=False)
+    print("Successfully generated data/features.csv!")
 
 if __name__ == "__main__":
-    try:
-        run_backfill()
-    except Exception as error:
-        print(f"Backfill failed: {error}")
-        sys.exit(1)
+    backfill_data()

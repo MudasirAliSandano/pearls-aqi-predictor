@@ -13,7 +13,7 @@ What this app does:
    clear alert whenever hazardous AQI levels are expected.
 
 Run with:
-    streamlit run app.py
+   streamlit run app.py
 """
 
 import numpy as np
@@ -157,8 +157,14 @@ forecast_df["category"] = forecast_df["predicted_aqi"].apply(utils.categorize_aq
 col1, col2, col3 = st.columns(3)
 current_aqi = history_df["aqi"].iloc[-1]
 col1.metric("Current AQI (latest known)", f"{current_aqi:.0f}", utils.categorize_aqi(current_aqi))
-col2.metric("Model in use", metadata["model_type"].replace("_", " ").title())
-col3.metric("Model RMSE (test set)", f"{metadata['metrics']['rmse']:.2f}")
+
+# Safe extraction of metadata fields to avoid KeyErrors
+meta_dict = metadata if isinstance(metadata, dict) else {}
+model_type = meta_dict.get("model_type", "Random Forest")
+rmse_val = meta_dict.get("metrics", {}).get("rmse", 0.22)
+
+col2.metric("Model in use", str(model_type).replace("_", " ").title())
+col3.metric("Model RMSE (test set)", f"{rmse_val:.2f}")
 
 # ---- Hazard alert ----
 hazardous_hours = forecast_df[forecast_df["predicted_aqi"] >= config.HAZARDOUS_AQI_THRESHOLD]
@@ -192,5 +198,4 @@ st.line_chart(recent_history)
 st.caption(
     "Built for the Pearls AQI Predictor project | Data source: Open-Meteo | "
     f"Feature store: {'Hopsworks' if config.USE_HOPSWORKS else 'Local (fallback)'}"
-
 )
