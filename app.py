@@ -3,7 +3,7 @@ app.py
 ------
 STEP 4 of the project: the Web Application Dashboard.
 
-What this app does:
+What this app does :
 1. Loads the trained model (and scaler) from the Model Registry.
 2. Fetches the upcoming weather forecast for the next few days.
 3. Uses the model to predict AQI hour-by-hour for the forecast window,
